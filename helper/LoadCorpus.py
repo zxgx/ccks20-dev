@@ -1,5 +1,4 @@
 import re
-import json
 
 
 def load_corpus(path):
@@ -63,8 +62,22 @@ def load_corpus(path):
 
 
 if __name__ == '__main__':
+    import json
+    import random
+
     corpus_path = '../corpus/task1-4_train_2020.txt'
-    data_path = '../data/corpus_train.json'
+    data_path = [
+        '../data/corpus_train.json', 
+        '../data/corpus_dev.json', 
+        '../data/corpus_test.json'
+    ]
     corpus = load_corpus(corpus_path)
-    with open(data_path, 'w', encoding='utf-8') as f:
-        json.dump(corpus, f, ensure_ascii=False, indent=4)
+    
+    random.seed(1020)
+    random.shuffle(corpus)
+    train, dev, test = corpus[:3200], corpus[3200:3600], corpus[3600:]
+    
+    for data, path in zip([train, dev, test], data_path):
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
