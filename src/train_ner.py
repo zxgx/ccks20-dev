@@ -37,7 +37,7 @@ class DataLoader():
             dtype=object)
         entities = [ corpus[i]['gold_entities'] for i in range(len(corpus)) ]
         entities = [ [entity[1:-1].split('_')[0] for entity in line] \
-            for line in entities ]
+            for line in entities ] # 有2个含有多个下划线的实体
         self.entities = np.array(entities, dtype=object)
 
         X, att_mask, Y = [], [], []
