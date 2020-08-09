@@ -201,7 +201,7 @@ def main():
         
         print('epoch %d | train loss %.4f'%(epoch+1, total_loss), end=' | ')
         print('test f1-score %.4f, precision %.4f, recall %.4f'%(
-            f1, precision, precision))
+            f1, precision, recall))
         
         if f1 > maxf1:
             maxf1 = f1
@@ -229,10 +229,10 @@ def main():
     pred_entities = restore_entities(all_pred, test_loader.questions)
     
     precision, recall, f1 = computeF(test_loader.entities, pred_entities)
-    print('precision %.4f, recall %.4f, f1 %.4f'%(precision, recall, f1))
-    for i in range(200, 230):
+    for i in range(200, 210):
         print(pred_entities[i])
         print(test_loader.entities[i])
+    print('precision %.4f, recall %.4f, f1 %.4f'%(precision, recall, f1))
 
 
 if __name__ == '__main__':
