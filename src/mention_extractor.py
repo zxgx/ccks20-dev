@@ -48,7 +48,8 @@ class MentionExtractor():
         for t in tokens:
             if t in self.segment_dict:
                 mentions.append(t)
-        
+        # print(mentions)
+
         # NERBERT
         ret = self.tokenizer(
             q, padding='max_length', truncation=True, max_length=max_seq_len)
@@ -64,13 +65,15 @@ class MentionExtractor():
         # max_seq_len
         pred = [ 1 if each>0.5 else 0 for each in pred ]
         
-        mentions.extend(self.restor_entities(pred, q))
+        bert_mentions = self.restore_entities(pred, q)
+        # print(bert_mentions)
+        mentions.extend(bert_mentions)
 
         for token in mentions:
             entity_mention[token] = token
         return entity_mention
     
-    def restor_entities(self, pred, q):
+    def restore_entities(self, pred, q):
         entities = []
         str = ''
         pred = pred[1:-1] # cls & sep
@@ -81,17 +84,18 @@ class MentionExtractor():
                 if len(str):
                     entities.append(str)
                     str = ''
-            if len(str):
-                entities.append(str)
+        if len(str):
+            entities.append(str)
         return entities
 
 
 if __name__ == '__main__':
     inputs = ['../data/corpus_train.json', '../data/corpus_dev.json', '../data/corpus_test.json']
     outputs = ['../data/entity_mentions_train.json', '../data/entity_mentions_dev.json', '../data/entity_mentions_test.json']
-    
+    s = "尿液肺炎链球菌抗原检测试验属于哪种类型？"
     me = MentionExtractor()
-    
+    me.extract_mentions(s)
+
     for in_path, out_path in zip(inputs, outputs):
         corpus = json.load(open(in_path, 'r', encoding='utf-8'))
         corpus = me.get_entity_mention(corpus)
