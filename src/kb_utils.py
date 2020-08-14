@@ -9,7 +9,7 @@ def get_relations_2hop(entity):
     sparql = "select distinct ?x ?y where {{{a} ?x ?b. ?b ?y ?z}}".format(a=entity)
     
     paths = []
-    res = json.loads(gc.query('pkubase', 'json', sparql)
+    res = json.loads(gc.query('pkubase', 'json', sparql))
     try:
         for each in res['results']['bindings']:
             paths.append([each['x']['value'], each['y']['bindings']])
@@ -32,4 +32,6 @@ def get_relation_num(entity):
 
 
 if __name__ == '__main__':
-    pass
+    sparql = "select ?x  where {{{a} ?x ?y}}".format(a='<周杰伦>')
+    res = json.loads(gc.query('pkubase', 'json', sparql))
+    print(res['results']['bindings'])

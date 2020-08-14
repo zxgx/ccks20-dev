@@ -5,13 +5,15 @@ import jieba.posseg as pseg
 from kb_utils import get_relation_num, get_relations_2hop
 from utils import compute_entity_features
 
-stop_pos = {'f','d','h','k','r','c','p','u','y','e','o','g','w','m'}
+# jieba的非paddle词性标记模型中，标点符号的词性为非语素词x
+stop_pos = {'f','d','h','k','r','c','p','u','y','e','o','g','x','m'}
+
 stop_mention = {
     '是什么', '在哪里', '哪里', '什么', '提出的', '有什么', '国家', '哪个', '所在', '培养出', '为什么', 
     '什么时候', '人', '你知道', '都包括', '是谁', '告诉我', '又叫做', '有', '是'
 }
 
-class SubjectExtractor():
+class EntityExtractor():
     def __init__(self):
         with open('../data/mention2entity.json', 'r', encoding='utf-8') as f:
             self.mention2entity = json.load(f)
@@ -57,20 +59,24 @@ class SubjectExtractor():
             print(len(candidate_entities))
             print('时间:%.2fs'%(time.time()-st))
             
-            if len(set(gold_entities)) == len(set(gold_entities).intersection(set(candidate_entities))):
+            if len(set(gold_entities)) == len(set(gold_entities).intersection(\
+            set(candidate_entities))): # 实体抽取成功
                 num_true += 1
                 if len(gold_entities) == 1:
                     num_one_true
-            else:
+            else: # 实体抽取失败
                 self.f.write(str(i)+': '+question+'\n')
-                f.write('\t'.join(gold_entities)+'\n')
-                f.write('\t'.join(list(candidate_entities.keys()))+'\n\n')
+                self.f.write('\t'.join(gold_entities)+'\n')
+                self.f.write('\t'.join(list(candidate_entities.keys()))+'\n\n')
             if len(gold_entities) == 1:
                 num_one += 1
         
         print('单实体问题可召回比例为：%.2f'%(num_one_true/num_one))
         print('所有问题可召回比例为：%.2f'%(num_true/len(corpus)))
         print('平均每个问题的候选主语个数为：%.2f'%(num_subject/len(corpus)))
+        
+        with open('../data/entity2hop.json', 'w', encoding='utf-8') as f:
+            json.dump(self.entity2hop, f, indent=4, ensure_ascii=False)
         
         return corpus
 
@@ -98,11 +104,13 @@ class SubjectExtractor():
                         self.entity2hop[entity] = relations
                     
                     # 问题和主语实体及其两跳内关系间的相似度
-                    similar_features = compute_entity_features(question, entity, relations)
+                    similar_features = compute_entity_features(
+                        question, entity, relations)
                     
                     # 实体的流行度特征
                     popular_feature = get_relation_num(entity)
-                    candidate[entity] = mention_features + similar_features + [popular_feature ** 0.5]
+                    candidate[entity] = mention_features + similar_features +\
+                        [popular_feature ** 0.5]
         
         for property in property_mentions:
             mention = property_mentions[property]
@@ -112,7 +120,7 @@ class SubjectExtractor():
             if len(pos) == 1 and pos[0].flag in stop_pos:
                 continue
             
-            # 实体？属性值？
+            # 实体？属性值？这里或许不用过滤？
             entity = '<' + property + '>'
             if entity in candidate:
                 continue
@@ -129,13 +137,12 @@ class SubjectExtractor():
                 self.entity2hop[entity] = relations
             
             # 问题和主语实体及其两跳内关系间的相似度
-            similar_features = compute_entity_features(question, entity, relations)
+            similar_features = compute_entity_features(
+                question, entity, relations)
             popular_feature = get_relation_num(entity)
-            candidate[entity] = mention_features + similar_features + [popular_feature ** 0.5]
-        
-        with open('../data/entity2hop.json', 'w', encoding='utf-8') as f:
-            json.dump(self.entity2hop, f, indent=4, ensure_ascii=False)
-        
+            candidate[entity] = mention_features + similar_features +\
+                [popular_feature ** 0.5]
+
         return candidate
     
     def get_mention_features(self, question, mention):
@@ -169,7 +176,7 @@ if __name__ == "__main__":
         '../data/candidate_entities_test.json'
     ]
     
-    se = SubjectExtractor()
+    se = EntityExtractor()
     
     for in_path, out_path in zip(inputs, outputs):
         with open(in_path, 'r', encoding='utf-8') as f:
