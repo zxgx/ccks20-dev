@@ -26,7 +26,7 @@ class EntityExtractor():
         
         self.word2freq = self.load_word2freq('../corpus/SogouLabDic.dic')
         
-        self.f = open('../data/record/entity_extractor_ans.txt')
+        self.f = open('../data/records/entity_extractor_ans.txt', 'w')
         
     def load_word2freq(self, path):
         ret = dict()
@@ -109,12 +109,12 @@ class EntityExtractor():
                     
                     # 实体的流行度特征
                     popular_feature = get_relation_num(entity)
-                    candidate[entity] = mention_features + similar_features +\
+                    candidates[entity] = mention_features + similar_features +\
                         [popular_feature ** 0.5]
         
         for property in property_mentions:
             mention = property_mentions[property]
-            if mention in self.stop_mention or property in self.stop_mention:
+            if mention in stop_mention or property in stop_mention:
                 continue
             pos = pseg.lcut(mention)
             if len(pos) == 1 and pos[0].flag in stop_pos:
@@ -122,7 +122,7 @@ class EntityExtractor():
             
             # 实体？属性值？这里或许不用过滤？
             entity = '<' + property + '>'
-            if entity in candidate:
+            if entity in candidates:
                 continue
             
             # mention特征
@@ -140,10 +140,10 @@ class EntityExtractor():
             similar_features = compute_entity_features(
                 question, entity, relations)
             popular_feature = get_relation_num(entity)
-            candidate[entity] = mention_features + similar_features +\
+            candidates[entity] = mention_features + similar_features +\
                 [popular_feature ** 0.5]
 
-        return candidate
+        return candidates
     
     def get_mention_features(self, question, mention):
         f1 = float(len(mention))
@@ -185,3 +185,4 @@ if __name__ == "__main__":
         with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(corpus, f, indent=4, ensure_ascii=False)
     se.f.close()
+
