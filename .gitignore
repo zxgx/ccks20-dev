@@ -2,3 +2,5 @@
 corpus/*
 !corpus/data.zip
 !corpus/data.tgz
+src/data/*
+!src/data/data.zip

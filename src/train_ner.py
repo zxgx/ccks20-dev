@@ -186,15 +186,16 @@ def main():
         
         model.eval()
         all_pred = []
-        for batch in test_loader:
-            X = torch.from_numpy(batch[0]).to(device)
-            att_mask = torch.from_numpy(batch[1]).to(device)
-            Y = torch.from_numpy(batch[2]).to(device)
-            
-            pred = model(X, att_mask).tolist() # b, s, 1
-            pred = [ [1 if each[0]>0.5 else 0 for each in line] \
-                for line in pred ] # b, s
-            all_pred.extend(pred) 
+        with torch.no_grad():
+            for batch in test_loader:
+                X = torch.from_numpy(batch[0]).to(device)
+                att_mask = torch.from_numpy(batch[1]).to(device)
+                Y = torch.from_numpy(batch[2]).to(device)
+                
+                pred = model(X, att_mask).tolist() # b, s, 1
+                pred = [ [1 if each[0]>0.5 else 0 for each in line] \
+                    for line in pred ] # b, s
+                all_pred.extend(pred) 
         
         pred_entities = restore_entities(all_pred, test_loader.questions)
         precision, recall, f1 = computeF(test_loader.entities, pred_entities)
