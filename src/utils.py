@@ -25,5 +25,20 @@ def features_from_two_sequences(s1, s2):
     return [overlap, jaccard]
 
 
+def cmp(t1, t2):
+    '''比较两个tuple是否相等'''
+    if len(t1) != len(t2):
+        return 1
+    t1 = set(t1)
+    t2 = set(t2)
+    if len(t1) == len(t1.intersection(t2)) and len(t2)==len(t1.intersection(t2)):
+        return 0
+    else:
+        return 1
+
+
+def 
+
+
 if __name__ == '__main__':
     pass

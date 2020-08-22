@@ -3,6 +3,7 @@ from transformers import BertTokenizer, BertModel
 import numpy as np
 import torch
 import torch.nn as nn
+from sklearn import metrics
 
 
 max_seq_len = 55
@@ -62,12 +63,12 @@ class BertSim(nn.Module):
             input_ids=x, attention_mask=att_mask, token_type_ids=type_ids)
         
         # 原代码采用pool句子表示，即[cls] -> fc -> tanh的输出
-        # ret = self.fc(ret[1])
+        ret = self.fc(ret[1])
         
         # [ batch_size, max_seq_len, hidden_size ]
-        ret = torch.max(ret[0], dim=1) 
+        # ret, _ = torch.max(ret[0], dim=1) 
         # [ batch_size, hidden_size ]
-        ret = self.fc(ret)
+        # ret = self.fc(ret)
         # [ batch_size, 2 ]
         return ret
 
@@ -81,7 +82,7 @@ def train():
     
     criterion = nn.CrossEntropyLoss()
     # 原代码有warmup等
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-5, weight_decay=1e-2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-2)
     maxf1, stop_epoch = 0., 0
     for epoch in range(100):
         model.train()
@@ -97,17 +98,19 @@ def train():
             loss = criterion(logits, y)
             tot_loss += loss.item()
             loss.backward()
+            nn.utils.clip_grad_norm(model.parameters(), 1.)
             optimizer.step()
             
-        f1, acc = evaluate(model, dev_loader, device)
-        print('epoch: %d, train loss: %.4f, dev acc: %.4f, dev f1: %.4f'%\
-            (epoch, tot_loss, acc, f1))
+        acc, f1, ff1 = evaluate(model, dev_loader, device)
+        print('epoch: %d, train loss: %.4f, dev acc: %.4f, dev f1: %.4f, my f1: %.4f'%\
+            (epoch, tot_loss, acc, f1, ff1))
         if f1 > maxf1:
             maxf1, stop_epoch = f1, 0
             torch.save(model.state_dict(), '../data/model/similarity.pt')
         else:
             stop_epoch += 1
         if stop_epoch == 10:
+            print('Stop training at epoch %d'%(epoch-10))
             break
 
 
@@ -122,12 +125,14 @@ def evaluate(model, data_loader, device):
             
             logits = model(x, type_ids, att_mask)
             
-            pred.append(logits.argmax(1))
+            pred.append(logits.argmax(1).cpu().numpy())
             gold.append(batch[1])
     pred, gold = np.hstack(pred), np.hstack(gold)
-    f1 = f1_score(gold.tolist(), pred.tolist())
-    acc = (pred==gold).sum() / data_load.num_data
-    return acc, f1
+    print(pred.tolist()[:15], '\n', gold.tolist()[:15], '\n')
+    f1 = metrics.f1_score(gold.tolist(), pred.tolist())
+    ff1 = f1_score(gold.tolist(), pred.tolist())
+    acc = (pred==gold).sum() / data_loader.num_data
+    return acc, f1, ff1
 
 
 def f1_score(gold, pred):
@@ -151,9 +156,9 @@ def predict(model, tokenizer, device, s1, s2):
         s1, s2, padding='max_length', 
         truncation='longest_first', max_length=max_seq_len
     )
-    ids = torch.tensor([ret['input_ids']], dtype=torch.long)
-    type_ids = torch.tensor([ret['token_type_ids']], dtype=torch.long)
-    att_mask = torch.tensor([ret['attention_mask']], dtype=torch.long)
+    ids = torch.tensor([ret['input_ids']], dtype=torch.long).to(device)
+    type_ids = torch.tensor([ret['token_type_ids']], dtype=torch.long).to(device)
+    att_mask = torch.tensor([ret['attention_mask']], dtype=torch.long).to(device)
     
     model.eval()
     with torch.no_grad():
@@ -162,4 +167,20 @@ def predict(model, tokenizer, device, s1, s2):
 
 
 if __name__ == '__main__':
-    
+    train()
+
+    model = BertSim()
+    device = torch.device('cuda:1')
+    model.load_state_dict(torch.load('../data/model/similarity.pt'))
+    model.to(device)
+
+    tokenizer = BertTokenizer.from_pretrained(BERT_ID)
+    s1 = '借了钱，但还没有通过，可以取消吗？'
+    s2 = '可否取消'
+    s3 = '一天利息好多钱'
+    s4 = '1万利息一天是5元是吗'
+    ret = predict(model, tokenizer, device, s1, s2)
+    print(ret.argmax(1))
+    ret = predict(model, tokenizer, device, s3, s4)
+    print(ret.argmax(1))
+

@@ -105,17 +105,17 @@ if __name__ == '__main__':
     import pickle
     from sklearn import linear_model
     
-    train_path = '../data/candidate_entitiess_train.json'
+    train_path = '../data/candidate_entities_train.json'
     with open(train_path, 'r', encoding='utf-8') as f:
         train_corpus = json.load(f)
     
-    dev_path = '../data/candidate_entitiess_dev.json'
+    dev_path = '../data/candidate_entities_dev.json'
     with open(dev_path, 'r', encoding='utf-8') as f:
         dev_corpus = json.load(f)
     
     x_train, y_train, samples_train, gold_entities_train, question2sample_train = get_data(train_corpus)
     x_dev, y_dev, samples_dev, gold_entities_dev, question2sample_dev = get_data(dev_corpus)
-    print(x_trian.shape)
+    print(x_train.shape)
     
     # 逻辑回归
     model = linear_model.LogisticRegression(C=1e5)
