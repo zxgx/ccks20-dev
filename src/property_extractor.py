@@ -63,7 +63,8 @@ class PropertyExtractor():
         '''
         从问题中抽取和知识库属性值匹配的字符串
         '''
-        properties = dict()
+        # {class - {property - mention}}
+        properties = dict() 
         backup = q
         
         # 双引号和书名号
@@ -201,12 +202,10 @@ if __name__ == '__main__':
     inputs = [
         '../data/entity_mentions_train.json',
         '../data/entity_mentions_dev.json',
-        '../data/entity_mentions_test.json'
     ]
     outputs = [
         '../data/all_mentions_train.json',
         '../data/all_mentions_dev.json',
-        '../data/all_mentions_test.json'
     ]
     import time
     st = time.time()

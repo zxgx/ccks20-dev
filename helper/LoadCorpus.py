@@ -31,7 +31,6 @@ def load_corpus(path):
                         gold_relations.append(elements[j])
                     else:
                         gold_entities.append(elements[j])
-            gold_tuple = tuple(gold_entities+gold_relations)
             corpus.append({
                 'id': idx,
                 'question': question,
@@ -61,6 +60,27 @@ def load_corpus(path):
     return corpus
 
 
+def load_test_data(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    data = []
+    for i in range(len(lines)):
+        line = lines[i].strip().split(':')
+        idx = line[0]
+        question = ':'.join(line[1:])
+        question = re.sub('你了解', '', question)
+        question = re.sub('我想知道', '', question)
+        question = re.sub('请问', '', question)
+        
+        data.append({
+            'id': idx,
+            'question': question
+        })
+
+    print('共%d条测试数据'%(len(data)))
+    return data
+
+
 if __name__ == '__main__':
     import json
     import random
@@ -69,15 +89,20 @@ if __name__ == '__main__':
     data_path = [
         '../data/corpus_train.json', 
         '../data/corpus_dev.json', 
-        '../data/corpus_test.json'
     ]
     corpus = load_corpus(corpus_path)
     
     random.seed(1020)
     random.shuffle(corpus)
-    train, dev, test = corpus[:3200], corpus[3200:3600], corpus[3600:]
+    train, dev = corpus[:3000], corpus[3000:]
     
-    for data, path in zip([train, dev, test], data_path):
+    for data, path in zip([train, dev], data_path):
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
+
+    test_path = '../corpus/task1-4_valid_2020.questions'
+    test_data = load_test_data(test_path)
+    path = '../data/test.json'
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(test_data, f, ensure_ascii=False, indent=4)
 

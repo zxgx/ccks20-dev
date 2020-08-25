@@ -37,8 +37,5 @@ def cmp(t1, t2):
         return 1
 
 
-def 
-
-
 if __name__ == '__main__':
     pass

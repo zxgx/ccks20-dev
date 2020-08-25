@@ -120,16 +120,17 @@ class NERBERT(nn.Module):
         return ret
 
 
-def restore_entities(pred, question):
+def restore_entities(pred, questions):
     # 注意：shuffle后，pred与questions顺序不同
     all_entities = []
     for i in range(len(pred)):
         entities = []
         str = ''
         labels = pred[i][1:-1] # cls & sep
+        question = questions[i]
         for j in range(min(len(labels), len(question))):
             if labels[j] == 1:
-                str += question[i][j]
+                str += question[j]
             else:
                 if len(str):
                     entities.append(str)
@@ -161,10 +162,10 @@ def main():
     # 训练集
     train_loader = DataLoader('../data/corpus_train.json', shuffle=True)
     # 测试集
-    test_loader = DataLoader('../data/corpus_test.json')
+    test_loader = DataLoader('../data/corpus_dev.json')
     
     # 训练
-    device = torch.device('cuda:1')
+    device = torch.device('cuda:0')
     model = NERBERT().to(device)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
@@ -230,7 +231,8 @@ def main():
     pred_entities = restore_entities(all_pred, test_loader.questions)
     
     precision, recall, f1 = computeF(test_loader.entities, pred_entities)
-    for i in range(200, 210):
+    for i in range(200, 215):
+        print(test_loader.questions[i])
         print(pred_entities[i])
         print(test_loader.entities[i])
     print('precision %.4f, recall %.4f, f1 %.4f'%(precision, recall, f1))

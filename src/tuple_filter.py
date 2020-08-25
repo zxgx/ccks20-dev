@@ -26,10 +26,10 @@ def get_data(corpus):
         for t in candidate_tuples:
             features = candidate_tuples[t]
             if len(gold_tuple) == len(set(gold_tuple).intersection(set(t))):
-                X.append([features[2]])
+                X.append([features[-1]])
                 Y.append([1])
             else:
-                X.append([features[2]])
+                X.append([features[-1]])
                 Y.append([0])
             samples.append(t)
             q_sample_indexs.append(sample_index)
@@ -47,9 +47,9 @@ def get_data(corpus):
         #判断单实体问题中，可召回的比例
         if if_true == 1:
             true_num += 1
-            if len(gold_tuple) <=3 and len(gold_entitys) == 1:
+            if len(gold_tuple) <=3 and len(gold_entities) == 1:
                 hop2_true_num += 1
-        if len(gold_tuple) <=3 and len(gold_entitys) == 1:
+        if len(gold_tuple) <=3 and len(gold_entities) == 1:
             hop2_num += 1
         
     X = np.array(X, dtype='float32')
@@ -73,25 +73,25 @@ def get_train_data(corpus):
         gold_tuples = tuple(gold_entities + gold_relations)
         for t in candidate_tuples:
             features = candidate_tuples[t]
-            if len(gold_tuple) == len(set(gold_tuple).intersection(set(t))):
-                X.append([features[2]]) # mention长度？？？？？？？？？？
+            if len(gold_tuples) == len(set(gold_tuples).intersection(set(t))):
+                X.append([features[-1]]) # mention长度？？？？？？？？？？
                 Y.append([1])
             else:
                 prop = random.random()
-                if prop<0.5:
-                    X.append([features[2]])
+                if prop<0.05:
+                    X.append([features[-1]])
                     Y.append([0])
         
         if_true = 0 # 判断答案是否召回
         for thistuple in candidate_tuples:
-            if cmp(thistuple, gold_tuple)==0:
+            if cmp(thistuple, gold_tuples)==0:
                 if_true = 1
                 break
         if if_true == 1:
             true_num += 1
-            if len(gold_tuple) <=3 and len(gold_entitys) == 1:
+            if len(gold_tuples) <=3 and len(gold_entities) == 1:
                 hop2_true_num += 1
-        if len(gold_tuple) <=3 and len(gold_entitys) == 1:
+        if len(gold_tuples) <=3 and len(gold_entities) == 1:
             hop2_num += 1
     
     X = np.array(X, dtype='float32')
@@ -149,9 +149,9 @@ def save_filter_candidate_tuple(corpus,predict_tuples):
         candidate_tuple_filter = {}
         for t in predict_tuples[i]:
             features = corpus[i]['candidate_tuples'][t]
-            print(features)
-            new_features = features[0:2]+[features[9][0][1]]
-            print(new_features)
+            # print(features)
+            new_features = features[0:2]+[features[-1]]
+            # print(new_features)
             candidate_tuple_filter[t] = new_features
         corpus[i]['candidate_tuple_filter'] = candidate_tuple_filter
         #temp =corpus[i].pop('candidate_tuples')
@@ -159,14 +159,14 @@ def save_filter_candidate_tuple(corpus,predict_tuples):
 
 
 if __name__ == '__main__':
-    import json
+    import pickle
     
-    dev_path = '../data/candidate_tuples_dev.json'
-    with open(dev_path, 'r', encoding='utf-8') as f:
-        dev_corpus = json.load(f)
-    train_path = '../data/candidate_tuples_train.json'
-    with open(train_path, 'r', encoding='utf-8') as f:
-        train_corpus = json.load(f)
+    dev_path = '../data/candidate_tuples_dev.pkl'
+    with open(dev_path, 'rb') as f:
+        dev_corpus = pickle.load(f)
+    train_path = '../data/candidate_tuples_train.pkl'
+    with open(train_path, 'rb') as f:
+        train_corpus = pickle.load(f)
     
     x_train, y_train = get_train_data(train_corpus)
     x_dev, y_dev, samples_dev, ans_dev, gold_tuples_dev,\
@@ -188,12 +188,12 @@ if __name__ == '__main__':
     model = linear_model.LogisticRegression(C=1e5)
     model.fit(x_train, y_train)
     print(model.coef_)
-    with open('../data/model/tuple_classifer_model.pkl', 'wb') as f:
+    with open('../data/model/tuple_classifier_model.pkl', 'wb') as f:
         pickle.dump(model, f)
     y_predict = model.predict_proba(x_dev).tolist()
     
-    #topns = [1,5,10,20,30,50,100]
-    topns = [10]
+    topns = [1,5,10,20,30]
+    # topns = [10]
     for topn in topns:
         predict_tuples_dev, predict_props_dev = get_predict_tuples(
                 y_predict, samples_dev, question2sample_dev, topn)
@@ -201,19 +201,19 @@ if __name__ == '__main__':
             gold_tuples_dev, predict_tuples_dev, predict_props_dev)
         print ('在验证集上逻辑回归筛选后top%d 召回率为%.2f'%(topn, precision_topn))
     
-    save_filter_candidate_tuple(dev_corpus, predict_tuples_dev)
+    dev_corpus = save_filter_candidate_tuple(dev_corpus, predict_tuples_dev)
     
     x_train, y_train, samples_train, ans_train, gold_tuples_train,\
-        question2sample_train = GetData(train_corpus)
+        question2sample_train = get_data(train_corpus)
     y_predict = model.predict_proba(x_train).tolist()
     predict_tuples_train, predict_props_train = get_predict_tuples(
         y_predict, samples_train, question2sample_train,topn)
-    save_filter_candidate_tuple(train_corpus, predict_tuples_train)
+    train_corpus = save_filter_candidate_tuple(train_corpus, predict_tuples_train)
     
-    train_path = '../data/candidate_tuples_filter_train.json'
-    with open(train_path, 'w', encoding='utf-8') as f:
-        json.dump(train_corpus, f, indent=4, ensure_ascii=False)
-    dev_path = '../data/candidate_tuples_filter_dev.json'
-    with open(dev_path, 'w', encoding='utf-8') as f:
-        json.dump(dev_corpus, f, indent=4, ensure_ascii=False)
-    
+    train_path = '../data/candidate_tuples_filter_train.pkl'
+    with open(train_path, 'wb') as f:
+        pickle.dump(train_corpus, f)
+    dev_path = '../data/candidate_tuples_filter_dev.pkl'
+    with open(dev_path, 'wb') as f:
+        pickle.dump(dev_corpus, f)
+

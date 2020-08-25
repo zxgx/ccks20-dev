@@ -82,7 +82,7 @@ def compute_precision(gold_entities, predict_entities):
             if len(gold_entities[i]) == 1:
                 one_true_num +=1
         else:
-            if len(gold_entities[i]) == 1: # 只要有一个在gold中就不算错误
+            if len(gold_entities[i]) == 1: # 感觉有问题
                 wrong_list.append(i)
         if len(gold_entities[i])==1:
             one_num+=1
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     # 逻辑回归
     model = linear_model.LogisticRegression(C=1e5)
     model.fit(x_train, y_train)
-    with open('../data/model/entity_classifer_model.pkl', 'wb') as f:
+    with open('../data/model/entity_classifier_model.pkl', 'wb') as f:
         pickle.dump(model, f)
     y_predict = model.predict_proba(x_dev).tolist() # (num_sample, 2-class)
     
@@ -141,10 +141,10 @@ if __name__ == '__main__':
         y_predict, samples_train, question2sample_train, topn)
     train_corpus = save_filter_candidateE(train_corpus,predict_entities)
     
-    train_path = '../data/candidate_entitys_filter_train.json'
+    train_path = '../data/candidate_entities_filter_train.json'
     with open(train_path, 'w', encoding='utf-8') as f:
         json.dump(train_corpus, f, indent=4, ensure_ascii=False)
     
-    dev_path = '../data/candidate_entitys_filter_dev.json'
+    dev_path = '../data/candidate_entities_filter_dev.json'
     with open(dev_path, 'w', encoding='utf-8') as f:
         json.dump(dev_corpus, f, indent=4, ensure_ascii=False)

@@ -12,7 +12,16 @@ def get_relations_2hop(entity):
     res = json.loads(gc.query('pkubase', 'json', sparql))
     try:
         for each in res['results']['bindings']:
-            paths.append([each['x']['value'], each['y']['bindings']])
+            if each['x']['type'] == 'uri':
+                x = '<'+each['x']['value']+'>'
+            else:
+                x = '"'+each['x']['value']+'"'
+            
+            if each['y']['type'] == 'uri':
+                y = '<'+each['y']['value']+'>'
+            else:
+                y = '"'+each['y']['value']+'"'
+            paths.append([x, y])
         ret = dict()
         for path in paths:
             for p in path:
@@ -42,13 +51,27 @@ def get_relation_paths(entity):
     res2 = json.loads(gc.query('pkubase', 'json', sparql_2))
     try:
         for each in res1["results"]["bindings"]:
-            rpaths1.append([each["x"]["value"]])
+            if each['x']['type'] == 'uri':
+                x = '<' + each['x']['value'] + '>'
+            else:
+                x = '"' + each['x']['value'] + '"'
+            rpaths1.append([x])
     except:
         pass
     
     try:
         for each in res2["results"]["bindings"]:
-            rpaths2.append([each["x"]["value"], each["y"]["value"]])
+            if each['x']['type'] == 'uri':
+                x = '<'+each['x']['value']+'>'
+            else:
+                x = '"'+each['x']['value']+'"'
+            
+            if each['y']['type'] == 'uri':
+                y = '<'+each['y']['value']+'>'
+            else:
+                y = '"'+each['y']['value']+'"'
+
+            rpaths2.append([x, y])
     except:
         pass
     

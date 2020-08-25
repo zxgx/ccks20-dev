@@ -2,15 +2,13 @@ import pickle
 import re
 import json
 import numpy as np
-
-import jieba.posseg as pseg
-from collections import defaultdict
+import joblib
 
 from mention_extractor import MentionExtractor
 from entity_extractor import EntityExtractor
 from property_extractor import PropertyExtractor
 from tuple_extractor import TupleExtractor
-from kb_utils import gc
+from kb_utils import gc, get_relation_paths
 
 # 双实体问题桥接不考虑的关系
 not_relation = {'<中文名>', '<外文名>', '<本名>', '<别名>', '<国籍>', '<职业>'}
@@ -33,6 +31,8 @@ class KBQA():
         path = '../data/model/tuple_classifier_model.pkl'
         with open(path, 'rb') as f:
             self.tuple_classifier = pickle.load(f)
+        
+        self.scaler = joblib.load('../data/model/tuple_scaler')
     
     def add_answers_to_corpus(self, corpus):
         for sample in corpus:
@@ -102,10 +102,15 @@ class KBQA():
         if len(subjects) == 0:
             return []
         
-        tuples = self.tuple_extractor.extract_tuples(subjects, question)
+        entity2relations = dict()
+        for e in subjects:
+            ret = get_relation_paths(e)
+            entity2relations[e] = ret
+        tuples = self.tuple_extractor.extract_tuples(
+            subjects, question, entity2relations)
         dic['tuples'] = tuples
         print('>>> 抽取的查询路径')
-        print(tuples)
+        print(list(tuples.keys()))
         if len(tuples) == 0:
             return []
         
@@ -124,18 +129,27 @@ class KBQA():
             sparql = 'select ?x where {{{a} {b} ?x}}'.format(\
                 a=search_paths[0], b=search_paths[1])
             ret = json.loads(gc.query('pkubase', 'json', sparql))
-            ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
+            try:
+                ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
+            except:
+                ans = []
         elif len(search_paths) == 3:
             sparql = 'select ?x where {{{a} {b} ?m . ?m {c} ?x}}'.format(\
                 a=search_paths[0], b=search_paths[1], c=search_paths[2])
             ret = json.loads(gc.query('pkubase', 'json', sparql))
-            ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
+            try:
+                ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
+            except:
+                ans = []
         elif len(search_paths) == 4:
             sparql = 'select ?x where {{{a} {b} ?x . ?x {c} {d}}}'.format(\
                 a=search_paths[0], b=search_paths[1], 
                 c=search_paths[2], d=search_paths[3])
             ret = json.loads(gc.query('pkubase', 'json', sparql))
-            ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
+            try:
+                ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
+            except:
+                ans = []
         else:
             print('不规范的查询路径')
             ans = []
@@ -175,7 +189,7 @@ class KBQA():
             features.append(subjects[s][1:])
         pred_prob = self.entity_classifier.predict_proba(
             np.array(features))[:, 1].tolist()
-        sample_property = [each for each in zip(pred_prob, entities]
+        sample_property = [each for each in zip(pred_prob, entities)]
         sample_property = sorted(
             sample_property, key=lambda x:x[0], reverse=True)
         entities = [each[1] for each in sample_property]
@@ -195,7 +209,7 @@ class KBQA():
         for t in tuples:
             tuple_list.append(t)
             features.append(tuples[t][-1:])
-        xxx = features
+        xxx = self.scaler.transform(features)
         pred_prob = self.tuple_classifier.predict_proba(xxx)[:, 1].tolist()
         
         sample_prop = [each for each in zip(pred_prob, tuple_list)]
@@ -207,7 +221,7 @@ class KBQA():
         '''
         从排名前几的tuples里选择与问题overlap最多的
         '''
-        max_, ans = tuples[0]
+        max_, ans = 0, tuples[0]
         for t in tuples:
             text = ''
             for element in t:
@@ -223,15 +237,21 @@ class KBQA():
 
 if __name__ == '__main__':
     import json
-    
+    import pickle
+
     qa = KBQA()
     
-    path = '../data/candidate_entities_filter_test.json'
-    with open(path, 'r', encoding='utf-8') as f:
-        corpus = json.load(f)
+    # path = '../data/test.json'
+    dev_path = '../data/candidate_tuples_filter_dev.pkl'
+    with open(dev_path, 'rb') as f:
+        corpus = pickle.load(f)
     
-    corpus = qa.add_answers_to_corpus(corpus)
+    corpus = qa.add_answers_to_corpus(corpus[5:15])
     
+    # path = '../data/results.json'
+    # with open(path, 'w', encoding='utf-8') as f:
+        # json.dump(corpus, f, indent=4, ensure_ascii=False)
+
     ave_f = 0.0
     for i in range(len(corpus)):
         sample = corpus[i]

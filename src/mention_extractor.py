@@ -40,6 +40,7 @@ class MentionExtractor():
         return corpus
     
     def extract_mentions(self, q):
+        # {mention - mention}
         entity_mention = {}
         
         # jieba分词
@@ -90,8 +91,14 @@ class MentionExtractor():
 
 
 if __name__ == '__main__':
-    inputs = ['../data/corpus_train.json', '../data/corpus_dev.json', '../data/corpus_test.json']
-    outputs = ['../data/entity_mentions_train.json', '../data/entity_mentions_dev.json', '../data/entity_mentions_test.json']
+    inputs = [
+        '../data/corpus_train.json', 
+        '../data/corpus_dev.json'
+    ]
+    outputs = [
+        '../data/entity_mentions_train.json',
+        '../data/entity_mentions_dev.json'
+    ]
     s = "尿液肺炎链球菌抗原检测试验属于哪种类型？"
     me = MentionExtractor()
     me.extract_mentions(s)

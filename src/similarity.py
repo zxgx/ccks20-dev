@@ -77,7 +77,7 @@ def train():
     train_loader = DataLoader('data/train.csv', shuffle=True)
     dev_loader = DataLoader('data/dev.csv')
     
-    device = torch.device('cuda:1')
+    device = torch.device('cuda:0')
     model = BertSim().to(device)
     
     criterion = nn.CrossEntropyLoss()
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     train()
 
     model = BertSim()
-    device = torch.device('cuda:1')
+    device = torch.device('cuda:0')
     model.load_state_dict(torch.load('../data/model/similarity.pt'))
     model.to(device)
 

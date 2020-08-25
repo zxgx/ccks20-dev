@@ -31,7 +31,7 @@ def load_data(path):
     
 
 if __name__ == '__main__':
-    dataset_path = 'corpus/task1-4_train_2020.txt'
+    dataset_path = '../corpus/task1-4_train_2020.txt'
     dataset = load_data(dataset_path)
     
     idx = [357, 6288//4, 9844//4, 10084//4] # 后3个问题里含有‘:’
@@ -41,14 +41,18 @@ if __name__ == '__main__':
     print('\n'+'*'*50+'\n')
     
     gcon = GstoreConnector(DB_HOST, PORT, USER_NAME, PASSWORD)
-    item = dataset[207]
-    ret = json.loads(gcon.query(DB_NAME, 'json', item['sparql']))   # 编码问题
-    print(ret)
+
+    for i in range(len(dataset)):
+        item = dataset[i]
+        ret = json.loads(gcon.query(DB_NAME, 'json', item['sparql']))
+        print(ret, '\n')
+        if i == 15:
+            break
     print('\n'+'*'*50+'\n')
-    
+    '''   
     max_seq_len = 0
     for i, item in enumerate(dataset):
-        '''
+        
         # 查询是一个json字符串
         # https://www.w3.org/TR/sparql11-overview/#sparql11-results
         ret = json.loads(gcon.query(DB_NAME, 'json', item['sparql'])) 
@@ -69,8 +73,8 @@ if __name__ == '__main__':
                 print(values)
                 print(item['ans'], '\n')
                 break
-        '''
         if len(item['question']) > max_seq_len:
             max_seq_len = len(item['question'])
     print(max_seq_len)
+    '''
 

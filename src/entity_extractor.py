@@ -65,7 +65,7 @@ class EntityExtractor():
                 if len(gold_entities) == 1:
                     num_one_true
             else: # 实体抽取失败
-                self.f.write(str(i)+': '+question+'\n')
+                self.f.write(item['id']+': '+question+'\n')
                 self.f.write('\t'.join(gold_entities)+'\n')
                 self.f.write('\t'.join(list(candidate_entities.keys()))+'\n\n')
             if len(gold_entities) == 1:
@@ -81,6 +81,8 @@ class EntityExtractor():
         return corpus
 
     def extract_subject(self, entitiy_mentions, property_mentions, question):
+        # {entity - feature}
+        # feature: [mention, 3 mention, 8 similar, 1 popular]
         candidates = dict()
         for mention in entitiy_mentions:
             pos = pseg.lcut(mention)
@@ -168,12 +170,10 @@ if __name__ == "__main__":
     inputs = [
         '../data/all_mentions_train.json',
         '../data/all_mentions_dev.json',
-        '../data/all_mentions_test.json'
     ]
     outputs = [
         '../data/candidate_entities_train.json',
         '../data/candidate_entities_dev.json',
-        '../data/candidate_entities_test.json'
     ]
     
     se = EntityExtractor()
