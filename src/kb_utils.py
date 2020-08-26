@@ -78,8 +78,18 @@ def get_relation_paths(entity):
     return rpaths1 + rpaths2
 
 
-def get_relation_paths_single(entity):
-    pass
+def get_answer(sparql):
+    ret = json.loads(gc.query('pkubase', 'json', sparql))
+    ans = []
+    try:
+        for each in ret['results']['bindings']:
+            if each['x']['type'] == 'uri':
+                ans.append('<'+each['x']['value']+'>')
+            else:
+                ans.append('"'+each['x']['value']+'"')
+    except:
+        pass
+    return ans
 
 
 if __name__ == '__main__':

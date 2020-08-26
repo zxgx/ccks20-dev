@@ -8,7 +8,7 @@ from mention_extractor import MentionExtractor
 from entity_extractor import EntityExtractor
 from property_extractor import PropertyExtractor
 from tuple_extractor import TupleExtractor
-from kb_utils import gc, get_relation_paths
+from kb_utils import get_relation_paths, get_answer
 
 # 双实体问题桥接不考虑的关系
 not_relation = {'<中文名>', '<外文名>', '<本名>', '<别名>', '<国籍>', '<职业>'}
@@ -128,28 +128,18 @@ class KBQA():
         if len(search_paths) == 2:
             sparql = 'select ?x where {{{a} {b} ?x}}'.format(\
                 a=search_paths[0], b=search_paths[1])
-            ret = json.loads(gc.query('pkubase', 'json', sparql))
-            try:
-                ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
-            except:
-                ans = []
+            ans = get_answer(sparql)
+
         elif len(search_paths) == 3:
             sparql = 'select ?x where {{{a} {b} ?m . ?m {c} ?x}}'.format(\
                 a=search_paths[0], b=search_paths[1], c=search_paths[2])
-            ret = json.loads(gc.query('pkubase', 'json', sparql))
-            try:
-                ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
-            except:
-                ans = []
+            ans = get_answer(sparql)
+            
         elif len(search_paths) == 4:
             sparql = 'select ?x where {{{a} {b} ?x . ?x {c} {d}}}'.format(\
                 a=search_paths[0], b=search_paths[1], 
                 c=search_paths[2], d=search_paths[3])
-            ret = json.loads(gc.query('pkubase', 'json', sparql))
-            try:
-                ans = [ each['x']['value'] for each in ret['results']['bindings'] ]
-            except:
-                ans = []
+            ans = get_answer(sparql)
         else:
             print('不规范的查询路径')
             ans = []
@@ -235,23 +225,18 @@ class KBQA():
         return ans
 
 
-if __name__ == '__main__':
-    import json
+def valid():
     import pickle
-
+    import time
+    
+    st = time.time()
     qa = KBQA()
+    time_consume = time.time() - st
     
-    # path = '../data/test.json'
-    dev_path = '../data/candidate_tuples_filter_dev.pkl'
-    with open(dev_path, 'rb') as f:
+    path = '../data/candidate_tuples_filter_dev.pkl'
+    with open(path, 'rb') as f:
         corpus = pickle.load(f)
-    
     corpus = qa.add_answers_to_corpus(corpus)
-    
-    # path = '../data/results.json'
-    # with open(path, 'w', encoding='utf-8') as f:
-        # json.dump(corpus, f, indent=4, ensure_ascii=False)
-
     ave_f = 0.0
     for i in range(len(corpus)):
         sample = corpus[i]
@@ -259,12 +244,41 @@ if __name__ == '__main__':
         pred_ans = sample['predict_ans']
         # f1计算，感觉有点问题？？？
         true = len(set(gold_ans).intersection(set(pred_ans)))
-        precision = true / len(set(pred_ans))
-        recall = true / len(set(gold_ans))
         try:
+            precision = true / len(set(pred_ans))
+            recall = true / len(set(gold_ans))
             f1 = 2*precision*recall/(precision+recall)
         except:
             f1 = 0.
         ave_f += f1
     ave_f /= len(corpus)
-    print(ave_f)
+    
+    print('模型加载耗时%.2fs'%(time_consume))
+    print('average f1: %.4f'%ave_f)
+
+
+def test():
+    import json
+    import time
+    
+    st = time.time()
+    qa = KBQA()
+    time_consume = time.time() - st
+    
+    path = '../data/test.json'
+    with open(path, 'r', encoding='utf-8') as f:
+        corpus = json.load(f)
+    corpus = qa.add_answers_to_corpus(corpus)
+    
+    res_path = '../result.txt'
+    with open(res_path, 'w', encoding='utf-8') as f:
+        for item in corpus:
+            f.write('\t'.join(item['predict_ans'])+'\n')
+    print('模型加载耗时%.2fs'%time_consume)
+    
+    
+if __name__ == '__main__':
+    # valid()
+    
+    test()
+
