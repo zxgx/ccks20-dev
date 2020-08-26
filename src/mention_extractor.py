@@ -21,7 +21,7 @@ class MentionExtractor():
         
         # NERBERT tokenizer & model
         self.tokenizer = BertTokenizer.from_pretrained(BERT_ID)
-        self.device = torch.device('cuda:1')
+        self.device = torch.device('cuda:0')
         self.ner_model = NERBERT()
         self.ner_model.load_state_dict(
             torch.load('../data/model/ner_model.pt'))

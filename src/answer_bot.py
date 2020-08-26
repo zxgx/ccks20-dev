@@ -246,7 +246,7 @@ if __name__ == '__main__':
     with open(dev_path, 'rb') as f:
         corpus = pickle.load(f)
     
-    corpus = qa.add_answers_to_corpus(corpus[5:15])
+    corpus = qa.add_answers_to_corpus(corpus)
     
     # path = '../data/results.json'
     # with open(path, 'w', encoding='utf-8') as f:

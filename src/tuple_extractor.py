@@ -12,7 +12,7 @@ class TupleExtractor(object):
         self.tokenizer = BertTokenizer.from_pretrained(BERT_ID)
         self.device = torch.device('cuda:0')
         self.simmer.load_state_dict(
-            torch.load('../data/model/similarity.pt', map_location={'cuda:1':'cuda:0'})) 
+            torch.load('../data/model/similarity.pt'))
         self.simmer.to(self.device)
         print ('bert相似度匹配模型加载完成')
         
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     for inputpath,outputpath in zip(inputpaths,outputpaths):
         with open(inputpath, 'r', encoding='utf-8') as f:
             corpus = json.load(f)
-        corpus = te.get_candidate_ans(corpus[:20])
+        corpus = te.get_candidate_ans(corpus)
         with open(outputpath, 'wb') as f:
             pickle.dump(corpus, f)
 
