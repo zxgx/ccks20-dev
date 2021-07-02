@@ -1,3 +1,10 @@
+# Deprecated
+**2021.7.3更新**
+
+有人star了这个代码，感觉良心不安...更新一下
+
+如果继续参加CCKS的KBQA任务的话，为了不浪费时间，不建议参考这个代码，我不会tensorflow，把源代码改成pytorch实现的过程很粗糙，最后拼在一起效果非常拉跨，建议直接参考获奖队伍源代码
+
 # ccks20-dev
 CCKS2019年第四名的复现  
 源码：[ccks2019-ckbqa-4th-codes](https://github.com/duterscmy/ccks2019-ckbqa-4th-codes)
